@@ -100,7 +100,7 @@ fine_tuned_model = AuroraSmall(
     use_lora=False,  # fine_tuned_Model was not fine-tuned.
 )
 fine_tuned_model = full_linear_layer_lora(fine_tuned_model, lora_r = 16, lora_alpha = 4)
-checkpoint = torch.load('../model/training/hrest0/wampln/checkpoint_epoch_9.pth')
+checkpoint = torch.load('../model/training/hrest0/wampln/checkpoint_epoch_18.pth')
 
 fine_tuned_model.load_state_dict(checkpoint['model_state_dict'])
 print("Loading fine_tuned_Model from checkpoint")

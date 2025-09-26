@@ -9,7 +9,7 @@ from datetime import datetime
 
 import torch
 
-from aurora import AuroraSmall, Batch, Metadata, rollout,  Aurora
+from aurora import AuroraSmall, Batch, Metadata, rollout, Aurora
 import matplotlib.pyplot as plt
 
 from pathlib import Path
@@ -47,11 +47,12 @@ from utils import rmse_fn, plot_rmses, create_hrest0_batch
 
 
 from evaluation import evaluation
-from lora import create_custom_model, full_linear_layer_lora
+from lora import create_custom_model
 
 torch.use_deterministic_algorithms(True)
 
 os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+
 # # Data
 
 # In[79]:
@@ -90,37 +91,39 @@ sliced_hrest0_sa = full_hrest0.sel(time=slice(start_time, end_time),
                                    longitude=slice(lon_min, lon_max))
 
 
-model_initial = Aurora(
+small_model = AuroraSmall(
+    use_lora=False,  
+)
+
+small_model.load_state_dict(torch.load('../model/urora-0.25-small-pretrained1.pth'))
+
+
+
+
+big_model = Aurora(
     use_lora=False,  # Model was not fine-tuned.
 
 )
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(F"DEVICE:{device}")
+big_model.load_state_dict(torch.load('../model/aurora-0.25-pretrained_big.pth'))
 
-model_initial.load_state_dict(torch.load('../model/aurora-0.25-pretrained_big.pth'))
 
-
-
-fine_tuned_model = AuroraSmall(
-    use_lora=False,  
-)
-fine_tuned_model = full_linear_layer_lora(fine_tuned_model, lora_r = 16, lora_alpha = 4)
-checkpoint = torch.load('../model/training/hrest0/wampln/checkpoint_epoch_18.pth')
-
-fine_tuned_model.load_state_dict(checkpoint['model_state_dict'])
 
 # In[82]:
 
 
-results = evaluation(fine_tuned_model, model_initial, sliced_era5_SA, sliced_hrest0_sa)
+results = evaluation(small_model, big_model, sliced_era5_SA, sliced_hrest0_sa, device=device)
 
 
 # In[83]:
 
 
 counter = results['counter']
-surface_rmses_fine_tuned = results['surface_rmses_fine_tuned']
-atmospheric_rmses_fine_tuned = results['atmospheric_rmses_fine_tuned']
-surface_rmses_non_fine_tuned = results['surface_rmses_non_fine_tuned']
-atmospheric_rmses_non_fine_tuned = results['atmospheric_rmses_non_fine_tuned']
+surface_rmses_small_model = results['surface_rmses_fine_tuned']
+atmospheric_rmses_small_model = results['atmospheric_rmses_fine_tuned']
+surface_rmses_big_model = results['surface_rmses_non_fine_tuned']
+atmospheric_rmses_big_model = results['atmospheric_rmses_non_fine_tuned']
 
 
 
@@ -130,9 +133,9 @@ relative_surface_rmses = {}
 # In[85]:
 
 
-for surf_var, rmses in surface_rmses_fine_tuned.items():
+for surf_var, rmses in surface_rmses_small_model.items():
     
-    relative_surface_rmses[surf_var] = (surface_rmses_fine_tuned[surf_var]-surface_rmses_non_fine_tuned[surf_var])/surface_rmses_non_fine_tuned[surf_var]*100
+    relative_surface_rmses[surf_var] = (surface_rmses_small_model[surf_var]-surface_rmses_big_model[surf_var])/surface_rmses_big_model[surf_var]*100
     
 
 
@@ -143,9 +146,9 @@ relative_atmospheric_rmses = {}
 # In[88]:
 
 
-for atmos_var, rmses in atmospheric_rmses_fine_tuned.items():
+for atmos_var, rmses in atmospheric_rmses_small_model.items():
     
-    relative_atmospheric_rmses[atmos_var] = (atmospheric_rmses_fine_tuned[atmos_var]-atmospheric_rmses_non_fine_tuned[atmos_var])/atmospheric_rmses_non_fine_tuned[atmos_var]*100
+    relative_atmospheric_rmses[atmos_var] = (atmospheric_rmses_small_model[atmos_var]-atmospheric_rmses_big_model[atmos_var])/atmospheric_rmses_big_model[atmos_var]*100
     
 
 
@@ -156,7 +159,7 @@ atmospheric_variables_names = ["Geopotential", "Specific humidity", "Temperature
 # num_surface = len(surface_rmses_fine_tuned)
 n_cols = 5
 
-save_path = "../report/evaluation/big_modelvs_finetuned_model"
+save_path = "../report/evaluation/big_modelvs_non_finetuned_small"
 
 
 
@@ -164,66 +167,46 @@ save_path = "../report/evaluation/big_modelvs_finetuned_model"
 #
 # Compute global vmin and vmax for color consistency
 all_values = np.concatenate(
-    [relative_atmospheric_rmses[var].flatten() for var in atmospheric_rmses_fine_tuned] +
-    [relative_surface_rmses[var].flatten() for var in surface_rmses_fine_tuned]
+    [relative_atmospheric_rmses[var].flatten() for var in atmospheric_rmses_small_model] +
+    [relative_surface_rmses[var].flatten() for var in surface_rmses_small_model]
 )
 vmin, vmax = np.min(all_values), np.max(all_values)
-abs_max = 50
+
 # Create a norm centered at 0
-norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
+norm = TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
 
 # Create the figure and gridspec layout with space for vertical colorbar
 fig = plt.figure(figsize=(25, 6), dpi=300)
 n_cols = 5
 gs = GridSpec(2, n_cols, height_ratios=[1, 0.1], figure=fig)
 
-from matplotlib.ticker import FuncFormatter
-
-# Set global font size defaults (optional)
-plt.rcParams.update({'font.size': 22})
-
-# Define custom font sizes
-label_fontsize = 22
-tick_fontsize = 20
-title_fontsize = 24.5
-
-for i, variable in enumerate(atmospheric_rmses_fine_tuned):
+# Plot atmospheric heatmaps
+for i, variable in enumerate(atmospheric_rmses_small_model):
     ax = fig.add_subplot(gs[i // n_cols, i % n_cols])
     sns.heatmap(relative_atmospheric_rmses[variable], cmap="RdBu_r", cbar=False, norm=norm, ax=ax)
-
-    ax.set_xlabel("Lead Time (Hours)", fontsize=label_fontsize)
-
+    ax.set_xlabel("Lead Time (Hours)")
     if i % n_cols == 0:
-        ax.set_ylabel("Pressure levels (hPa)", fontsize=label_fontsize)
+        ax.set_ylabel("Pressure levels (hPa)")
         ax.set_yticks(np.arange(0.5, 13, 1))
         full_labels = [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 850, 925, 1000]
         cleaned_labels = [label if idx % 2 == 0 else "" for idx, label in enumerate(full_labels)]
-        ax.set_yticklabels(cleaned_labels, fontsize=tick_fontsize, rotation=0)  # Horizontal ticks
+        ax.set_yticklabels(cleaned_labels)
     else:
         ax.set_yticks([])
-
-    ax.set_title(f"{atmospheric_variables_names[i]}", fontsize=title_fontsize)
+    ax.set_title(f"{atmospheric_variables_names[i]}")
     ax.set_xticks(np.arange(0.5, 8.5, 1))
-    ax.set_xticklabels(np.arange(6, 48+6, 6), fontsize=tick_fontsize)
-
-    # Set tick label font size
-    ax.tick_params(axis='both', labelsize=tick_fontsize)
+    ax.set_xticklabels(np.arange(6, 48+6, 6))
 
 # Plot surface heatmaps
-for j, variable in enumerate(surface_rmses_fine_tuned):
+for j, variable in enumerate(surface_rmses_small_model):
     ax = fig.add_subplot(gs[1, j])
     sns.heatmap(relative_surface_rmses[variable].reshape(1, -1), cmap="RdBu_r", cbar=False, norm=norm, ax=ax)
-
-    ax.set_xlabel("Lead Time (Hours)", fontsize=label_fontsize)
+    ax.set_xlabel("Lead Time (Hours)")
     ax.set_ylabel("")
-    ax.set_title(f"{surface_variables_names[j]}", fontsize=title_fontsize)
+    ax.set_title(f"{surface_variables_names[j]}")
     ax.set_yticks([])
-
     ax.set_xticks(np.arange(0.5, 8.5, 1))
-    ax.set_xticklabels(np.arange(6, 48+6, 6), fontsize=tick_fontsize)
-
-    # Set tick label font size
-    ax.tick_params(axis='both', labelsize=tick_fontsize)
+    ax.set_xticklabels(np.arange(6, 48+6, 6))
 
 # Add vertical colorbar on the right side
 cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
@@ -233,12 +216,10 @@ cbar = plt.colorbar(sm, cax=cbar_ax)
 
 # Format colorbar ticks with +/- signs and percent
 cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:+.0f}%"))
-cbar.ax.tick_params(labelsize=tick_fontsize)
 
-# Final layout and saving
 plt.tight_layout(rect=[0, 0, 0.9, 1])
-plt.savefig(f"{save_path}/scorecard_wamp.pdf", bbox_inches="tight")
-plt.savefig(f"{save_path}/scorecard_wamp.png", bbox_inches="tight")
-plt.savefig(f"{save_path}/scorecard_wamp.svg", bbox_inches="tight")
+plt.savefig(f"{save_path}/scorecard_big_small_pt.pdf", bbox_inches="tight")
+plt.savefig(f"{save_path}/scorecard_big_small_pt.png", bbox_inches="tight")
+plt.savefig(f"{save_path}/scorecard_big_small_pt.svg", bbox_inches="tight")
 
 plt.show()

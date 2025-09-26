@@ -50,7 +50,7 @@ def evaluation(model_fine_tuned,
                era5_data=None, 
                hres_data=None,
              rollouts_num=8,
-             device = None):
+             device = "cuda"):
     
     model_fine_tuned.to(device)
     model_non_fine_tuned.to(device)
