@@ -73,7 +73,7 @@ full_era5 = xr.open_zarr(store=store, consolidated=True, chunks=None)
 
 
 
-start_time, end_time = '2022-01-01', '2022-12-31' 
+start_time, end_time = '2022-01-01', '2022-01-03' 
 
   
 sliced_era5 = (
@@ -126,6 +126,47 @@ EU_REGION = (
 )
 
 
+########## Climatology data
+
+# Load 6-hourly climatology
+clim = xr.open_zarr("gs://weatherbench2/datasets/era5-hourly-climatology/1990-2019_6h_1440x721.zarr")
+
+
+
+target_region_lat_min ,target_region_lat_max , target_region_lon_min, target_region_lon_max = SA_REGION
+base_region_lat_min ,base_region_lat_max , base_region_lon_min, base_region_lon_max = USA_REGION
+third_region_lat_min ,third_region_lat_max , third_region_lon_min, third_region_lon_max = EU_REGION
+
+
+
+
+clim_SA = (
+    clim
+    .sel(
+        latitude=slice(target_region_lat_max, target_region_lat_min),
+        longitude=slice(target_region_lon_min, target_region_lon_max)  
+    )
+)
+
+clim_USA = (
+    clim
+    .sel(
+        latitude=slice(base_region_lat_max, base_region_lat_min),
+        longitude=slice(base_region_lon_min, base_region_lon_max)  
+    )
+)
+
+clim_EUROPE = (
+    clim
+    .sel(
+        latitude=slice(third_region_lat_max, third_region_lat_min),
+        longitude=slice(third_region_lon_min, third_region_lon_max)  
+    )
+)
+
+
+
+
 results = evaluation_between_regions(
                         model,
                         era5_data=sliced_era5, 
@@ -133,21 +174,25 @@ results = evaluation_between_regions(
                         target_region=SA_REGION,
                         base_region= USA_REGION,
                         third_region= EU_REGION,
+                        climatology_tr=clim_SA,
+                        climatology_br=clim_USA,
+                        climatology_third=clim_EUROPE,
+                        device = "cuda"
                )
 
 
 
 # eu_region_surface_rmses = results['third_region_surface_rmses']
-eu_region_atmospheric_rmses = results['third_region_atmospheric_rmses']
+eu_region_atmospheric_acc = results['third_region_atmospheric_acc']
 
-# target_region_surface_rmses = results['target_region_surface_rmses']
-target_region_atmospheric_rmses = results['target_region_atmospheric_rmses']
-# base_region_surface_rmses = results['base_region_surface_rmses']
-base_region_atmospheric_rmses = results['base_region_atmospheric_rmses']
+# target_region_surface_acc = results['target_region_surface_acc']
+target_region_atmospheric_acc = results['target_region_atmospheric_acc']
+# base_region_surface_acc = results['base_region_surface_acc']
+base_region_atmospheric_acc = results['base_region_atmospheric_acc']
 
 
 # Selected variables names for atmospheric levels
-# variables = list(target_region_atmospheric_rmses.keys())
+# variables = list(target_region_atmospheric_acc.keys())
 # print("Selected variables:", variables)
 # selected_variables = [ "z", "t", "q" "u", "v"]
 
@@ -161,42 +206,42 @@ lead_time = [6, 12, 18, 24, 30, 36, 42, 48]
 SELECTED_ATMOS_LEVELS = {7:"500 hPa", 9: "700 hPa",  10:"850 hPa"}
 
 # selecte the require data for plotting
-target_region_atmos_rmses={}
+target_region_atmos_acc={}
 # z_500
 
-target_region_atmos_rmses["Geopotential at 500hPa"] = target_region_atmospheric_rmses['z'][7]
+target_region_atmos_acc["Geopotential at 500hPa"] = target_region_atmospheric_acc['z'][7]
 # t 850
-target_region_atmos_rmses["Temperature at 850hPa"] = target_region_atmospheric_rmses['t'][10]
+target_region_atmos_acc["Temperature at 850hPa"] = target_region_atmospheric_acc['t'][10]
 # q 700
-target_region_atmos_rmses["Specific humidity at 700hPa"] = target_region_atmospheric_rmses['q'][9]
+target_region_atmos_acc["Specific humidity at 700hPa"] = target_region_atmospheric_acc['q'][9]
 # u 850
-target_region_atmos_rmses["Eastward wind speed at 850hPa"] = target_region_atmospheric_rmses['u'][10]
+target_region_atmos_acc["Eastward wind speed at 850hPa"] = target_region_atmospheric_acc['u'][10]
 # v 850
-target_region_atmos_rmses["Southward wind speed at 850hPa"] = target_region_atmospheric_rmses['v'][10]
+target_region_atmos_acc["Southward wind speed at 850hPa"] = target_region_atmospheric_acc['v'][10]
 
-eu_region_atmos_rmses = {}
+eu_region_atmos_acc = {}
 # z_500
-eu_region_atmos_rmses["Geopotential at 500hPa"] = eu_region_atmospheric_rmses['z'][7]
+eu_region_atmos_acc["Geopotential at 500hPa"] = eu_region_atmospheric_acc['z'][7]
 # t 850
-eu_region_atmos_rmses["Temperature at 850hPa"] = eu_region_atmospheric_rmses['t'][10]
+eu_region_atmos_acc["Temperature at 850hPa"] = eu_region_atmospheric_acc['t'][10]
 # q 700
-eu_region_atmos_rmses["Specific humidity at 700hPa"] = eu_region_atmospheric_rmses['q'][9]
+eu_region_atmos_acc["Specific humidity at 700hPa"] = eu_region_atmospheric_acc['q'][9]
 # u 850
-eu_region_atmos_rmses["Eastward wind speed at 850hPa"] = eu_region_atmospheric_rmses['u'][10]
+eu_region_atmos_acc["Eastward wind speed at 850hPa"] = eu_region_atmospheric_acc['u'][10]
 # v 850
-eu_region_atmos_rmses["Southward wind speed at 850hPa"] = eu_region_atmospheric_rmses['v'][10]
+eu_region_atmos_acc["Southward wind speed at 850hPa"] = eu_region_atmospheric_acc['v'][10]
 
-base_region_atmos_rmses = {}
+base_region_atmos_acc = {}
 # z_500
-base_region_atmos_rmses["Geopotential at 500hPa"] = base_region_atmospheric_rmses['z'][7]
+base_region_atmos_acc["Geopotential at 500hPa"] = base_region_atmospheric_acc['z'][7]
 # t 850
-base_region_atmos_rmses["Temperature at 850hPa"] = base_region_atmospheric_rmses['t'][10]
+base_region_atmos_acc["Temperature at 850hPa"] = base_region_atmospheric_acc['t'][10]
 # q 700
-base_region_atmos_rmses["Specific humidity at 700hPa"] = base_region_atmospheric_rmses['q'][9]
+base_region_atmos_acc["Specific humidity at 700hPa"] = base_region_atmospheric_acc['q'][9]
 # u 850
-base_region_atmos_rmses["Eastward wind speed at 850hPa"] = base_region_atmospheric_rmses['u'][10]
+base_region_atmos_acc["Eastward wind speed at 850hPa"] = base_region_atmospheric_acc['u'][10]
 # v 850
-base_region_atmos_rmses["Southward wind speed at 850hPa"] = base_region_atmospheric_rmses['v'][10]
+base_region_atmos_acc["Southward wind speed at 850hPa"] = base_region_atmospheric_acc['v'][10]
 
 
 
@@ -210,12 +255,12 @@ tick_fontsize = 20
 title_fontsize = 24.5
 
 # --- Data setup ---
-num_plots = len(target_region_atmos_rmses)
+num_plots = len(target_region_atmos_acc)
 num_plots_per_rows = 5
 num_rows = 1
-variables = list(target_region_atmos_rmses.keys())
+variables = list(target_region_atmos_acc.keys())
 
-saving_path = "../report/evaluation/rmses_grid/pretrained_small/DLI"
+saving_path = "../report/evaluation/acc_grid/DLI"
 
 # --- Figure and subplots ---
 fig, axs = plt.subplots(num_rows, num_plots_per_rows, dpi=300, figsize=(40, 8))
@@ -226,9 +271,9 @@ handles, labels = None, None
 
 # --- Plot each variable ---
 for i, ax in enumerate(axs[:num_plots]):
-    line1, = ax.plot(lead_time, target_region_atmos_rmses[variables[i]], label="South Africa", c="brown")
-    line2, = ax.plot(lead_time, base_region_atmos_rmses[variables[i]], label="USA", c="teal")
-    line3, = ax.plot(lead_time, eu_region_atmos_rmses[variables[i]], label="Europe", c="navy")
+    line1, = ax.plot(lead_time, target_region_atmos_acc[variables[i]], label="South Africa", c="brown")
+    line2, = ax.plot(lead_time, base_region_atmos_acc[variables[i]], label="USA", c="teal")
+    line3, = ax.plot(lead_time, eu_region_atmos_acc[variables[i]], label="Europe", c="navy")
     
     ax.set_title(variables[i], fontsize=title_fontsize+2)
     ax.tick_params(axis='both', labelsize=tick_fontsize+2)
@@ -244,7 +289,7 @@ for ax in axs[num_plots:]:
 
 # --- Shared axis labels ---
 fig.supxlabel("Lead Time (Hours)", x=0.5, y=0.05, fontsize=label_fontsize+4)
-fig.supylabel("RMSE", x=0.01, y=0.5, fontsize=label_fontsize)
+fig.supylabel("ACC", x=0.01, y=0.5, fontsize=label_fontsize)
 
 # --- Shared legend ---
 fig.legend(

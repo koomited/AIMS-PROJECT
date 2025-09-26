@@ -64,7 +64,7 @@ full_era5 = xr.open_zarr(store=store, consolidated=True, chunks=None)
 
 
 
-start_time, end_time = '2022-01-01', '2022-12-31' 
+start_time, end_time = '2022-01-01', '2022-01-03' 
 
 
 
@@ -108,8 +108,23 @@ print("Loading fine_tuned_Model from checkpoint")
 
 # In[82]:
 
+# Load 6-hourly climatology
+clim = xr.open_zarr("gs://weatherbench2/datasets/era5-hourly-climatology/1990-2019_6h_1440x721.zarr")
+lat_max = -22.00 
+lat_min = -37.75  
 
-results = evaluation(fine_tuned_model, model_initial, sliced_era5_SA, sliced_hrest0_sa)
+lon_min = 15.25   
+lon_max = 35.00 
+
+clim_sa = (
+    clim
+    .sel(
+        latitude=slice(lat_max, lat_min),
+        longitude=slice(lon_min, lon_max)  
+    )
+)
+
+results = evaluation(fine_tuned_model, model_initial, sliced_era5_SA, sliced_hrest0_sa, clim_sa)
 
 
 # In[83]:

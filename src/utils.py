@@ -342,3 +342,33 @@ def create_hrest0_batch(surf_vars_ds, atmos_vars_ds, static_vars_ds, i=1):
 
     return batch
     
+    
+import pandas as pd
+
+def select_climatology(clim_ds, target_time, var):
+    """
+    Selects the 6-hourly climatology for a given target timestamp.
+    
+    Parameters:
+        clim_ds : xarray.Dataset
+            Climatology dataset with dims (dayofyear, hour, lat, lon, level)
+        target_time : np.datetime64 or pd.Timestamp
+            Timestamp of the forecast target
+    
+    Returns:
+        xarray.DataArray
+            Climatology at the same lat/lon/level as the target
+    """
+    # Convert target time to pandas timestamp
+    ts = pd.Timestamp(target_time)
+    
+    # Day of year (1-366)
+    day_of_year = ts.dayofyear
+    
+    # Hour (0, 6, 12, 18)
+    hour = (ts.hour // 6) * 6
+    
+    # Select from climatology
+    clim_selected = clim_ds.sel(dayofyear=day_of_year, hour=hour)
+    
+    return clim_selected[var].values
