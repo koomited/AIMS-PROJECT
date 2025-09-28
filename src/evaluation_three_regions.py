@@ -254,12 +254,13 @@ def evaluation_between_regions(
                 acc_tr=evaluation_acc(tr_target_tensor, 
                                     tr_pred_tensor, 
                                     climatology_data,
-                                    torch.tensor(hres_data.latitude.values),
-                                    torch.tensor(hres_data.longitude.values) ).item()
-                if acc_tr is not None and not np.isnan(acc_tr.cpu()):
+                                    torch.tensor(tr_feature_hres_data.latitude.values),
+                                    torch.tensor(tr_feature_hres_data.longitude.values)  ).item()
+                if acc_tr is not None and not np.isnan(acc_tr):
                     tr_surface_acc[surf_var][i]+= acc_tr
                 
                 ######### Base region
+                
                 climatology_data = select_climatology(climatology_br, target_time,
                                                       VARIABLE_CORRESPONDANCY[surf_var])
                 rmse_br = evaluation_rmse(
@@ -276,14 +277,15 @@ def evaluation_between_regions(
                 acc_br = evaluation_acc(br_target_tensor, 
                                     br_pred_tensor, 
                                     climatology_data,
-                                    torch.tensor(hres_data.latitude.values),
-                                    torch.tensor(hres_data.longitude.values) ).item()
-                if acc_br is not None and not np.isnan(acc_br.cpu()):
+                                    torch.tensor(br_feature_hres_data.latitude.values),
+                                    torch.tensor(br_feature_hres_data.longitude.values)  ).item()
+                if acc_br is not None and not np.isnan(acc_br):
                 
                     br_surface_acc[surf_var][i]+= acc_br
                 
                 
                 ## Third region
+                
                 climatology_data = select_climatology(climatology_third, target_time,
                                                       VARIABLE_CORRESPONDANCY[surf_var])
                 rmse_third =  evaluation_rmse(
@@ -299,9 +301,9 @@ def evaluation_between_regions(
                 acc_third = evaluation_acc(third_target_tensor, 
                                     third_pred_tensor, 
                                     climatology_data,
-                                    torch.tensor(hres_data.latitude.values),
-                                    torch.tensor(hres_data.longitude.values) ).item()
-                if acc_third is not None and not np.isnan(acc_third.cpu()):
+                                    torch.tensor(third_feature_hres_data.latitude.values),
+                                    torch.tensor(third_feature_hres_data.longitude.values)   ).item()
+                if acc_third is not None and not np.isnan(acc_third):
                 
                     third_surface_acc[surf_var][i]+= acc_third
             ## Atmospheric
@@ -309,7 +311,7 @@ def evaluation_between_regions(
             for c in range(atmos_levels_num):
                 for atmos_var in ATMOSPHERIC_VARIABLES:
                     climatology_data = select_climatology(climatology_tr, target_time,
-                                                      VARIABLE_CORRESPONDANCY[atmos_var])
+                                                      VARIABLE_CORRESPONDANCY[atmos_var])[c,:,:]
                     #target region
                     tr_pred_tensor = tr_prediction.atmos_vars[atmos_var].squeeze()[c,:,:]
                     tr_pred_tensor = tr_pred_tensor.to(device)
@@ -348,15 +350,15 @@ def evaluation_between_regions(
                     acc_tr=evaluation_acc(tr_target_tensor, 
                                         tr_pred_tensor, 
                                         climatology_data,
-                                        torch.tensor(hres_data.latitude.values),
-                                        torch.tensor(hres_data.longitude.values) ).item()
-                    if acc_tr is not None and not np.isnan(acc_tr.cpu()):
+                                        torch.tensor(tr_feature_hres_data.latitude.values),
+                                        torch.tensor(tr_feature_hres_data.longitude.values)  ).item()
+                    if acc_tr is not None and not np.isnan(acc_tr):
                         tr_atmospheric_acc[atmos_var][c, i] += acc_tr
                         
                     
                     ## BASE REGION
                     climatology_data = select_climatology(climatology_br, target_time,
-                                                      VARIABLE_CORRESPONDANCY[atmos_var])
+                                                      VARIABLE_CORRESPONDANCY[atmos_var])[c,:,:]
                     rmse_br =  evaluation_rmse(
                                                 br_target_tensor, 
                                                 br_pred_tensor, 
@@ -369,14 +371,14 @@ def evaluation_between_regions(
                     acc_br=evaluation_acc(br_target_tensor, 
                                         br_pred_tensor, 
                                         climatology_data,
-                                        torch.tensor(hres_data.latitude.values),
-                                        torch.tensor(hres_data.longitude.values) ).item()
-                    if acc_br is not None and not np.isnan(acc_br.cpu()):
+                                        torch.tensor(br_feature_hres_data.latitude.values),
+                                        torch.tensor(br_feature_hres_data.longitude.values) ).item()
+                    if acc_br is not None and not np.isnan(acc_br):
                         br_atmospheric_acc[atmos_var][c, i] += acc_br
                     
                     ## THIRD REGION
                     climatology_data = select_climatology(climatology_third, target_time,
-                                                      VARIABLE_CORRESPONDANCY[atmos_var])
+                                                      VARIABLE_CORRESPONDANCY[atmos_var])[c,:,:]
                     rmse_third = evaluation_rmse(
                                                     third_target_tensor, 
                                                     third_pred_tensor, 
@@ -385,16 +387,16 @@ def evaluation_between_regions(
                                                 ) 
                     if not rmse_third:
                         logger.info(f"Na values detected")
-                    if rmse_third is not None and not np.isnan(rmse_third.cpu()):
+                    if rmse_third is not None and not np.isnan(rmse_third.item()):
                     
                         third_atmospheric_rmses[atmos_var][c, i] += rmse_third
                     
                     acc_third=evaluation_acc(third_target_tensor, 
                                         third_pred_tensor, 
                                         climatology_data,
-                                        torch.tensor(hres_data.latitude.values),
-                                        torch.tensor(hres_data.longitude.values) ).item()
-                    if acc_third is not None and not np.isnan(acc_third.cpu()):
+                                        torch.tensor(third_feature_hres_data.latitude.values),
+                                        torch.tensor(third_feature_hres_data.longitude.values) ).item()
+                    if acc_third is not None and not np.isnan(acc_third):
                         third_atmospheric_acc[atmos_var][c, i] += acc_third
                  
         if not counter%10:

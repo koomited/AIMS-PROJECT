@@ -73,7 +73,7 @@ full_era5 = xr.open_zarr(store=store, consolidated=True, chunks=None)
 
 
 
-start_time, end_time = '2022-01-01', '2022-01-03' 
+start_time, end_time = '2022-01-01', '2022-12-31' 
 
   
 sliced_era5 = (

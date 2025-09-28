@@ -59,9 +59,10 @@ def evaluation_acc(
     Returns:
     - acc: Scalar ACC value
     """
-    actual, prediction, climatology = (
-        torch.tensor(actual).to(device), torch.tensor(prediction).to(device), torch.tensor(climatology).to(device)
-    )
+    actual = torch.as_tensor(actual, device=device)
+    prediction = torch.as_tensor(prediction, device=device)
+    climatology = torch.as_tensor(climatology, device=device)
+
     latitudes_weights = evaluation_rmse_weights(latitudes, device)
 
     H, W = actual.shape

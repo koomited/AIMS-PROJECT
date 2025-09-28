@@ -135,7 +135,7 @@ relative_surface_rmses = {}
 
 for surf_var, rmses in surface_rmses_small_model.items():
     
-    relative_surface_rmses[surf_var] = (surface_rmses_small_model[surf_var]-surface_rmses_big_model[surf_var])/surface_rmses_big_model[surf_var]*100
+    relative_surface_rmses[surf_var] = ((surface_rmses_big_model [surf_var]-surface_rmses_small_model[surf_var])/surface_rmses_small_model[surf_var])*100
     
 
 
@@ -148,7 +148,7 @@ relative_atmospheric_rmses = {}
 
 for atmos_var, rmses in atmospheric_rmses_small_model.items():
     
-    relative_atmospheric_rmses[atmos_var] = (atmospheric_rmses_small_model[atmos_var]-atmospheric_rmses_big_model[atmos_var])/atmospheric_rmses_big_model[atmos_var]*100
+    relative_atmospheric_rmses[atmos_var] = ((atmospheric_rmses_big_model [atmos_var]-atmospheric_rmses_small_model[atmos_var])/atmospheric_rmses_small_model[atmos_var])*100
     
 
 
@@ -162,8 +162,6 @@ n_cols = 5
 save_path = "../report/evaluation/big_modelvs_non_finetuned_small"
 
 
-
-
 #
 # Compute global vmin and vmax for color consistency
 all_values = np.concatenate(
@@ -171,42 +169,62 @@ all_values = np.concatenate(
     [relative_surface_rmses[var].flatten() for var in surface_rmses_small_model]
 )
 vmin, vmax = np.min(all_values), np.max(all_values)
-
+abs_max = 50
 # Create a norm centered at 0
-norm = TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
+norm = TwoSlopeNorm(vmin=-abs_max, vcenter=0, vmax=abs_max)
 
 # Create the figure and gridspec layout with space for vertical colorbar
 fig = plt.figure(figsize=(25, 6), dpi=300)
 n_cols = 5
 gs = GridSpec(2, n_cols, height_ratios=[1, 0.1], figure=fig)
 
-# Plot atmospheric heatmaps
+from matplotlib.ticker import FuncFormatter
+
+# Set global font size defaults (optional)
+plt.rcParams.update({'font.size': 22})
+
+# Define custom font sizes
+label_fontsize = 22
+tick_fontsize = 20
+title_fontsize = 24.5
+
 for i, variable in enumerate(atmospheric_rmses_small_model):
     ax = fig.add_subplot(gs[i // n_cols, i % n_cols])
     sns.heatmap(relative_atmospheric_rmses[variable], cmap="RdBu_r", cbar=False, norm=norm, ax=ax)
-    ax.set_xlabel("Lead Time (Hours)")
+
+    ax.set_xlabel("Lead Time (Hours)", fontsize=label_fontsize)
+
     if i % n_cols == 0:
-        ax.set_ylabel("Pressure levels (hPa)")
+        ax.set_ylabel("Pressure levels (hPa)", fontsize=label_fontsize)
         ax.set_yticks(np.arange(0.5, 13, 1))
         full_labels = [50, 100, 150, 200, 250, 300, 400, 500, 600, 700, 850, 925, 1000]
         cleaned_labels = [label if idx % 2 == 0 else "" for idx, label in enumerate(full_labels)]
-        ax.set_yticklabels(cleaned_labels)
+        ax.set_yticklabels(cleaned_labels, fontsize=tick_fontsize, rotation=0)  # Horizontal ticks
     else:
         ax.set_yticks([])
-    ax.set_title(f"{atmospheric_variables_names[i]}")
+
+    ax.set_title(f"{atmospheric_variables_names[i]}", fontsize=title_fontsize)
     ax.set_xticks(np.arange(0.5, 8.5, 1))
-    ax.set_xticklabels(np.arange(6, 48+6, 6))
+    ax.set_xticklabels(np.arange(6, 48+6, 6), fontsize=tick_fontsize)
+
+    # Set tick label font size
+    ax.tick_params(axis='both', labelsize=tick_fontsize)
 
 # Plot surface heatmaps
 for j, variable in enumerate(surface_rmses_small_model):
     ax = fig.add_subplot(gs[1, j])
     sns.heatmap(relative_surface_rmses[variable].reshape(1, -1), cmap="RdBu_r", cbar=False, norm=norm, ax=ax)
-    ax.set_xlabel("Lead Time (Hours)")
+
+    ax.set_xlabel("Lead Time (Hours)", fontsize=label_fontsize)
     ax.set_ylabel("")
-    ax.set_title(f"{surface_variables_names[j]}")
+    ax.set_title(f"{surface_variables_names[j]}", fontsize=title_fontsize)
     ax.set_yticks([])
+
     ax.set_xticks(np.arange(0.5, 8.5, 1))
-    ax.set_xticklabels(np.arange(6, 48+6, 6))
+    ax.set_xticklabels(np.arange(6, 48+6, 6), fontsize=tick_fontsize)
+
+    # Set tick label font size
+    ax.tick_params(axis='both', labelsize=tick_fontsize)
 
 # Add vertical colorbar on the right side
 cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])
@@ -216,10 +234,12 @@ cbar = plt.colorbar(sm, cax=cbar_ax)
 
 # Format colorbar ticks with +/- signs and percent
 cbar.ax.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:+.0f}%"))
+cbar.ax.tick_params(labelsize=tick_fontsize)
 
+# Final layout and saving
 plt.tight_layout(rect=[0, 0, 0.9, 1])
-plt.savefig(f"{save_path}/scorecard_big_small_pt.pdf", bbox_inches="tight")
-plt.savefig(f"{save_path}/scorecard_big_small_pt.png", bbox_inches="tight")
-plt.savefig(f"{save_path}/scorecard_big_small_pt.svg", bbox_inches="tight")
+plt.savefig(f"{save_path}/scorecard_bpt_vsspt.pdf", bbox_inches="tight")
+plt.savefig(f"{save_path}/scorecard_bpt_vsspt.png", bbox_inches="tight")
+plt.savefig(f"{save_path}/scorecard_bpt_vsspt.svg", bbox_inches="tight")
 
 plt.show()
