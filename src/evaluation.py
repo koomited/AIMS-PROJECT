@@ -254,6 +254,7 @@ def evaluation(model_fine_tuned,
     selected_times = hres_data.time.values  # Extract time values as NumPy array (faster access)
     num_samples = len(selected_times) - rollouts_num - 2
     loss_list = []
+    print(hres_data.latitude.values)
 
     model_fine_tuned.to(device)  # Move model to GPU if available
     model_non_fine_tuned.to(device)  # Move model to GPU if available

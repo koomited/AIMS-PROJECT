@@ -148,7 +148,7 @@ relative_atmospheric_rmses = {}
 
 for atmos_var, rmses in atmospheric_rmses_small_model.items():
     
-    relative_atmospheric_rmses[atmos_var] = ((atmospheric_rmses_big_model [atmos_var]-atmospheric_rmses_small_model[atmos_var])/atmospheric_rmses_small_model[atmos_var])*100
+    relative_atmospheric_rmses[atmos_var] = ((atmospheric_rmses_big_model[atmos_var]-atmospheric_rmses_small_model[atmos_var])/atmospheric_rmses_small_model[atmos_var])*100
     
 
 
