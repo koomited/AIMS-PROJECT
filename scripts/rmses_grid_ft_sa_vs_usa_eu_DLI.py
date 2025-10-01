@@ -189,27 +189,26 @@ base_region_atmos_rmses["Southward wind speed at 850hPa"] = base_region_atmosphe
 
 
 
-
-# --- Global font settings ---
+# --- Global font settings (same style as heatmap code) ---
 plt.rcParams.update({
     "font.family": "serif",
     "font.size": 22,          # Base font size
-    "axes.titlesize": 24.5,   # Subplot titles
-    "axes.labelsize": 22,     # Axis labels
-    "xtick.labelsize": 20,    # X tick labels
-    "ytick.labelsize": 20,    # Y tick labels
+    "axes.titlesize": 34,     # Subplot titles (larger)
+    "axes.labelsize": 32,     # Axis labels (larger)
+    "xtick.labelsize": 28,    # X tick labels (larger)
+    "ytick.labelsize": 28,    # Y tick labels (larger)
     "axes.linewidth": 0.8,
     "grid.linewidth": 1.2,
     "grid.alpha": 0.8,
-    "lines.linewidth": 1.5,
+    "lines.linewidth": 2.0,
     "figure.dpi": 300,
-    "legend.fontsize": 24     # Legend font size
+    "legend.fontsize": 32     # Legend font size
 })
 
-# Define custom font sizes (optional fine-tuning)
-label_fontsize = 22
-tick_fontsize = 20
-title_fontsize = 24.5
+# Define custom font sizes
+label_fontsize = 32
+tick_fontsize = 28
+title_fontsize = 34
 
 saving_path = "../report/evaluation/rmses_grid/fine_tuned_small/DLI"
 
@@ -220,7 +219,10 @@ num_rows = 1
 variables = list(target_region_atmos_rmses.keys())
 
 # --- Figure and subplots ---
-fig, axs = plt.subplots(num_rows, num_plots_per_rows, dpi=300, figsize=(40, 8))
+fig, axs = plt.subplots(
+    num_rows, num_plots_per_rows, 
+    dpi=300, figsize=(45, 9)  # wider + taller for bigger labels
+)
 axs = axs.ravel()
 
 # Store handles and labels from the first plot for global legend
@@ -228,14 +230,22 @@ handles, labels = None, None
 
 # --- Plot each variable ---
 for i, ax in enumerate(axs[:num_plots]):
-    line1, = ax.plot(lead_time, target_region_atmos_rmses[variables[i]], label="South Africa", c="brown")
-    line2, = ax.plot(lead_time, base_region_atmos_rmses[variables[i]], label="USA", c="teal")
-    line3, = ax.plot(lead_time, eu_region_atmos_rmses[variables[i]], label="Europe", c="navy")
+    ax.plot(lead_time, target_region_atmos_rmses[variables[i]], 
+            label="South Africa", c="brown")
+    ax.plot(lead_time, base_region_atmos_rmses[variables[i]], 
+            label="USA", c="teal")
+    ax.plot(lead_time, eu_region_atmos_rmses[variables[i]], 
+            label="Europe", c="navy")
     
-    ax.set_title(variables[i], fontsize=title_fontsize+2)
-    ax.tick_params(axis='both', labelsize=tick_fontsize+2)
-    ax.grid(True)
-
+    # Titles & labels
+    ax.set_title(variables[i], fontsize=title_fontsize)
+    ax.set_xlabel("Lead Time (Hours)", fontsize=label_fontsize)
+    ax.set_ylabel("RMSE", fontsize=label_fontsize if i % num_plots_per_rows == 0 else 0)
+    
+    # Tick formatting
+    ax.tick_params(axis='both', labelsize=tick_fontsize)
+    ax.grid(True, linestyle="--", alpha=0.7)
+    
     # Capture legend handles/labels once
     if i == 0:
         handles, labels = ax.get_legend_handles_labels()
@@ -244,18 +254,14 @@ for i, ax in enumerate(axs[:num_plots]):
 for ax in axs[num_plots:]:
     ax.axis('off')
 
-# --- Shared axis labels ---
-fig.supxlabel("Lead Time (Hours)", x=0.5, y=0.05, fontsize=label_fontsize+4)
-fig.supylabel("RMSE", x=0.01, y=0.5, fontsize=label_fontsize)
-
 # --- Shared legend ---
 fig.legend(
     handles, labels,
     loc='lower center',
     ncol=3,
-    bbox_to_anchor=(0.5, -0.07),  # Positioned below x-label
+    bbox_to_anchor=(0.5, -0.1),
     frameon=False,
-    fontsize=24
+    fontsize=32
 )
 
 # --- Layout and saving ---
@@ -263,4 +269,5 @@ plt.tight_layout(rect=[0, 0.05, 1, 1])
 plt.savefig(f"{saving_path}/ft_sa_vs_usa_vs_eu.pdf", bbox_inches="tight")
 plt.savefig(f"{saving_path}/ft_sa_vs_usa_vs_eu.png", bbox_inches="tight")
 plt.savefig(f"{saving_path}/ft_sa_vs_usa_vs_eu.svg", bbox_inches="tight")
+plt.show()
 plt.close()

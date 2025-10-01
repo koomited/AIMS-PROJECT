@@ -95,7 +95,7 @@ small_model = AuroraSmall(
     use_lora=False,  
 )
 
-small_model.load_state_dict(torch.load('../model/urora-0.25-small-pretrained1.pth'))
+small_model.load_state_dict(torch.load('../model/aurora-0.25-small-pretrained.pth'))
 
 
 
@@ -135,7 +135,7 @@ relative_surface_rmses = {}
 
 for surf_var, rmses in surface_rmses_small_model.items():
     
-    relative_surface_rmses[surf_var] = ((surface_rmses_big_model [surf_var]-surface_rmses_small_model[surf_var])/surface_rmses_small_model[surf_var])*100
+    relative_surface_rmses[surf_var] = ((surface_rmses_small_model[surf_var]-surface_rmses_big_model[surf_var])/surface_rmses_big_model[surf_var])*100
     
 
 
@@ -148,7 +148,7 @@ relative_atmospheric_rmses = {}
 
 for atmos_var, rmses in atmospheric_rmses_small_model.items():
     
-    relative_atmospheric_rmses[atmos_var] = ((atmospheric_rmses_big_model[atmos_var]-atmospheric_rmses_small_model[atmos_var])/atmospheric_rmses_small_model[atmos_var])*100
+    relative_atmospheric_rmses[atmos_var] = ((atmospheric_rmses_small_model[atmos_var]-atmospheric_rmses_big_model[atmos_var])/atmospheric_rmses_big_model[atmos_var])*100
     
 
 

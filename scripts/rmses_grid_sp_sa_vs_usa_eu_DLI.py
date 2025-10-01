@@ -5,7 +5,7 @@ from datetime import datetime
 
 import torch
 
-from aurora import AuroraSmall, Batch, Metadata, rollout
+from aurora import AuroraSmall, Batch, Metadata, rollout, Aurora
 import matplotlib.pyplot as plt
 
 from pathlib import Path
@@ -87,11 +87,18 @@ store_hrest0 = fs.get_mapper('gs://weatherbench2/datasets/hres_t0/2016-2022-6h-1
 full_hrest0 = xr.open_zarr(store=store_hrest0, consolidated=True, chunks=None)
 sliced_hrest0 = full_hrest0.sel(time=slice(start_time, end_time))
 #------------------------------1--------------------------------------
-model = AuroraSmall(
+# model = AuroraSmall(
+#     use_lora=False,  # fine_tuned_Model was not fine-tuned.
+# )
+
+# model.load_state_dict(torch.load('../model/aurora-0.25-small-pretrained.pth'))
+
+model = Aurora(
     use_lora=False,  # fine_tuned_Model was not fine-tuned.
 )
 
-model.load_state_dict(torch.load('../model/urora-0.25-small-pretrained1.pth'))
+model.load_state_dict(torch.load('../model/aurora-0.25-pretrained_big.pth'))
+
 
 
 #-----------------------------2----------------------------------------
@@ -215,7 +222,8 @@ num_plots_per_rows = 5
 num_rows = 1
 variables = list(target_region_atmos_rmses.keys())
 
-saving_path = "../report/evaluation/rmses_grid/pretrained_small/DLI"
+saving_path = "../report/evaluation/rmses_grid/pretrained_small/DLI/test"
+
 
 # --- Figure and subplots ---
 fig, axs = plt.subplots(num_rows, num_plots_per_rows, dpi=300, figsize=(40, 8))
