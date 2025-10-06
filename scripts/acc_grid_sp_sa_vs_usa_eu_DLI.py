@@ -42,7 +42,7 @@ from utils import rmse_fn, plot_rmses, create_hrest0_batch
 # In[78]:
 
 
-from evaluation_three_regions import evaluation_between_regions
+from evaluation_three_regions import evaluation_between_regions_acc
 from lora import create_custom_model, full_linear_layer_lora
 
 torch.use_deterministic_algorithms(True)
@@ -73,7 +73,7 @@ full_era5 = xr.open_zarr(store=store, consolidated=True, chunks=None)
 
 
 
-start_time, end_time = '2022-01-01', '2022-12-31' 
+start_time, end_time = '2022-01-01', '2022-01-03' 
 
   
 sliced_era5 = (
@@ -91,7 +91,7 @@ model = AuroraSmall(
     use_lora=False,  # fine_tuned_Model was not fine-tuned.
 )
 
-model.load_state_dict(torch.load('../model/urora-0.25-small-pretrained1.pth'))
+model.load_state_dict(torch.load('../model/aurora-0.25-small-pretrained.pth'))
 
 
 #-----------------------------2----------------------------------------
@@ -167,7 +167,7 @@ clim_EUROPE = (
 
 
 
-results = evaluation_between_regions(
+results = evaluation_between_regions_acc(
                         model,
                         era5_data=sliced_era5, 
                         hres_data=sliced_hrest0,
