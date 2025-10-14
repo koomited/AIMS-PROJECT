@@ -53,18 +53,10 @@ SURFACE_VARIABLES =["2t", "10u", "10v", "msl"]
 ATMOSPHERIC_VARIABLES = ["z", "q", "t", "u", "v"]
 
 
-surface_rmses_fine_tuned = {var:np.zeros(8) for var in SURFACE_VARIABLES}
-surface_acc_fine_tuned = {var:np.zeros(8) for var in SURFACE_VARIABLES}
-surface_rmses_non_fine_tuned = {var:np.zeros(8) for var in SURFACE_VARIABLES}
-surface_acc_non_fine_tuned = {var:np.zeros(8) for var in SURFACE_VARIABLES}
-
-atmospheric_rmses_fine_tuned  = {var:np.zeros((13,8)) for var in ATMOSPHERIC_VARIABLES}
-atmospheric_acc_fine_tuned  = {var:np.zeros((13,8)) for var in ATMOSPHERIC_VARIABLES}
-atmospheric_rmses_non_fine_tuned  = {var:np.zeros((13,8)) for var in ATMOSPHERIC_VARIABLES}
-atmospheric_acc_non_fine_tuned  = {var:np.zeros((13,8)) for var in ATMOSPHERIC_VARIABLES}
 
 
-def evaluation_rmse_acc(model_fine_tuned,
+
+def evaluation_acc_grid(model_fine_tuned,
                model_non_fine_tuned,
                era5_data=None, 
                hres_data=None,
@@ -72,12 +64,18 @@ def evaluation_rmse_acc(model_fine_tuned,
              rollouts_num=8,
              device = "cuda"):
     
+    surface_acc_fine_tuned = {var:np.zeros(8) for var in SURFACE_VARIABLES}
+    surface_acc_non_fine_tuned = {var:np.zeros(8) for var in SURFACE_VARIABLES}
+    atmospheric_acc_fine_tuned  = {var:np.zeros((13,8)) for var in ATMOSPHERIC_VARIABLES}
+    atmospheric_acc_non_fine_tuned  = {var:np.zeros((13,8)) for var in ATMOSPHERIC_VARIABLES}
+
+
+    
     model_fine_tuned.to(device)
     model_non_fine_tuned.to(device)
     
     selected_times = hres_data.time.values  # Extract time values as NumPy array (faster access)
     num_samples = len(selected_times) - rollouts_num - 2
-    loss_list = []
 
     model_fine_tuned.to(device)  # Move model to GPU if available
     model_non_fine_tuned.to(device)  # Move model to GPU if available
@@ -147,20 +145,7 @@ def evaluation_rmse_acc(model_fine_tuned,
                 
                 
                 # Rmses
-                surface_rmses_fine_tuned[surf_var][i]+= evaluation_rmse(
-                                                    target_tensor, 
-                                                    pred_tensor_ft, 
-                                                    torch.tensor(hres_data.latitude.values),
-                                                    torch.tensor(hres_data.longitude.values)  ,
-                                                     device = device 
-                                                ) 
-                surface_rmses_non_fine_tuned[surf_var][i]+= evaluation_rmse(
-                                                    target_tensor, 
-                                                    pred_tensor_nft, 
-                                                    torch.tensor(hres_data.latitude.values),
-                                                    torch.tensor(hres_data.longitude.values),
-                                                    device = device  
-                                                ) 
+               
                 # ACC
                 surface_acc_fine_tuned[surf_var][i]+=evaluation_acc(target_tensor, 
                                     pred_tensor_ft, 
@@ -176,7 +161,7 @@ def evaluation_rmse_acc(model_fine_tuned,
                 
                 
             ## Atmospheric
-            atmos_levels_num = atmospheric_rmses_fine_tuned["z"].shape[0]
+            atmos_levels_num = atmospheric_acc_fine_tuned["z"].shape[0]
             for c in range(atmos_levels_num):
                 for atmos_var in ATMOSPHERIC_VARIABLES:
                     climatology_data = select_climatology(climatology, target_time,
@@ -196,21 +181,7 @@ def evaluation_rmse_acc(model_fine_tuned,
                     
                     
                     
-                    #Atmospheric rmses
-                    atmospheric_rmses_fine_tuned[atmos_var][c, i] += evaluation_rmse(
-                                                    target_tensor, 
-                                                    pred_tensor_ft, 
-                                                    torch.tensor(hres_data.latitude.values),
-                                                    torch.tensor(hres_data.longitude.values),
-                                                    device = device  
-                                                ) 
-                    atmospheric_rmses_non_fine_tuned[atmos_var][c, i]+= evaluation_rmse(
-                                                    target_tensor, 
-                                                    pred_tensor_nft, 
-                                                    torch.tensor(hres_data.latitude.values),
-                                                    torch.tensor(hres_data.longitude.values),
-                                                    device = device   
-                                                ) 
+                   
                     # ACC
                     atmospheric_acc_fine_tuned[atmos_var][c, i] += evaluation_acc(target_tensor, 
                                     pred_tensor_ft, 
@@ -228,13 +199,9 @@ def evaluation_rmse_acc(model_fine_tuned,
     
     return {
         'counter': counter,
-        'surface_rmses_fine_tuned': surface_rmses_fine_tuned,
         'surface_acc_fine_tuned': surface_acc_fine_tuned,
-        'atmospheric_rmses_fine_tuned': atmospheric_rmses_fine_tuned,
         'atmospheric_acc_fine_tuned': atmospheric_acc_fine_tuned,
-        'surface_rmses_non_fine_tuned': surface_rmses_non_fine_tuned,
         'surface_acc_non_fine_tuned': surface_acc_non_fine_tuned,
-        'atmospheric_rmses_non_fine_tuned': atmospheric_rmses_non_fine_tuned,
         'atmospheric_acc_non_fine_tuned': atmospheric_acc_non_fine_tuned
     }
 
@@ -248,13 +215,19 @@ def evaluation(model_fine_tuned,
              rollouts_num=8,
              device = "cuda"):
     
+    surface_rmses_fine_tuned = {var:np.zeros(8) for var in SURFACE_VARIABLES}
+    surface_rmses_non_fine_tuned = {var:np.zeros(8) for var in SURFACE_VARIABLES}
+    atmospheric_rmses_fine_tuned  = {var:np.zeros((13,8)) for var in ATMOSPHERIC_VARIABLES}
+    atmospheric_rmses_non_fine_tuned  = {var:np.zeros((13,8)) for var in ATMOSPHERIC_VARIABLES}
+
+
+    
     model_fine_tuned.to(device)
     model_non_fine_tuned.to(device)
     
     selected_times = hres_data.time.values  # Extract time values as NumPy array (faster access)
     num_samples = len(selected_times) - rollouts_num - 2
-    loss_list = []
-    print(hres_data.latitude.values)
+    print(num_samples)
 
     model_fine_tuned.to(device)  # Move model to GPU if available
     model_non_fine_tuned.to(device)  # Move model to GPU if available
@@ -273,11 +246,11 @@ def evaluation(model_fine_tuned,
         sa_targets_hrest0_data = hres_data.sel(time=slice(t2, t3))
         
 
-        for i in range(rollouts_num):
-            # get target time
+        for r in range(rollouts_num):
+            # get target tme
             target_times = sa_targets_hrest0_data.time
             # get only two data for target
-            lead_time_target = sa_targets_hrest0_data.sel(time=slice(target_times[i], target_times[i+1]))
+            lead_time_target = sa_targets_hrest0_data.sel(time=slice(target_times[r], target_times[r+1]))
             ######################### climatology data
             
             target_time = lead_time_target.time.values[0]
@@ -293,12 +266,13 @@ def evaluation(model_fine_tuned,
             target_batch = create_hrest0_batch(sa_target_surface_data, sa_target_atmos_data, sa_target_static_data).to(device)
 
             # prediction from the fine tuned and non fine tuned model
-            predictions_fine_tuned_model =  predict_fn(model=model_fine_tuned, batch=input_batch, rollout_nums=rollouts_num, device=device)
-            predictions_non_fine_tuned_model =  predict_fn(model=model_non_fine_tuned, batch=input_batch, rollout_nums=rollouts_num, device=device)
+            predictions_fine_tuned_model =  predict_fn(model=model_fine_tuned, batch=input_batch, rollout_nums=r+1, device=device)
+            predictions_non_fine_tuned_model =  predict_fn(model=model_non_fine_tuned, batch=input_batch, rollout_nums=r+1, device=device)
             
             # Compuete rmse for all lead times
-            fine_tuned_prediction = predictions_fine_tuned_model[i]
-            non_fine_tuned_prediction = predictions_non_fine_tuned_model[i]
+            # print(f"{r}: {len(predictions_fine_tuned_model)}")
+            fine_tuned_prediction = predictions_fine_tuned_model[r]
+            non_fine_tuned_prediction = predictions_non_fine_tuned_model[r]
             
             for surf_var in SURFACE_VARIABLES:
                
@@ -322,14 +296,15 @@ def evaluation(model_fine_tuned,
                 
                 
                 # Rmses
-                surface_rmses_fine_tuned[surf_var][i]+= evaluation_rmse(
+                surface_rmses_fine_tuned[surf_var][r]+= evaluation_rmse(
                                                     target_tensor, 
                                                     pred_tensor_ft, 
                                                     torch.tensor(hres_data.latitude.values),
                                                     torch.tensor(hres_data.longitude.values)  ,
                                                      device = device 
                                                 ) 
-                surface_rmses_non_fine_tuned[surf_var][i]+= evaluation_rmse(
+                
+                surface_rmses_non_fine_tuned[surf_var][r]+= evaluation_rmse(
                                                     target_tensor, 
                                                     pred_tensor_nft, 
                                                     torch.tensor(hres_data.latitude.values),
@@ -358,14 +333,14 @@ def evaluation(model_fine_tuned,
                     
                     
                     #Atmospheric rmses
-                    atmospheric_rmses_fine_tuned[atmos_var][c, i] += evaluation_rmse(
+                    atmospheric_rmses_fine_tuned[atmos_var][c, r] += evaluation_rmse(
                                                     target_tensor, 
                                                     pred_tensor_ft, 
                                                     torch.tensor(hres_data.latitude.values),
                                                     torch.tensor(hres_data.longitude.values),
                                                     device = device  
                                                 ) 
-                    atmospheric_rmses_non_fine_tuned[atmos_var][c, i]+= evaluation_rmse(
+                    atmospheric_rmses_non_fine_tuned[atmos_var][c, r]+= evaluation_rmse(
                                                     target_tensor, 
                                                     pred_tensor_nft, 
                                                     torch.tensor(hres_data.latitude.values),

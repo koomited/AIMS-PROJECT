@@ -94,7 +94,7 @@ model_initial = AuroraSmall(
     use_lora=False,  # fine_tuned_Model was not fine-tuned.
 )
 
-model_initial.load_state_dict(torch.load('../model/urora-0.25-small-pretrained1.pth'))
+model_initial.load_state_dict(torch.load('../model/aurora-0.25-small-pretrained.pth'))
 
 fine_tuned_model = AuroraSmall(
     use_lora=False,  # fine_tuned_Model was not fine-tuned.
@@ -124,7 +124,7 @@ clim_sa = (
     )
 )
 
-results = evaluation(fine_tuned_model, model_initial, sliced_era5_SA, sliced_hrest0_sa, clim_sa)
+results = evaluation(fine_tuned_model, model_initial, sliced_era5_SA, sliced_hrest0_sa)
 
 
 # In[83]:

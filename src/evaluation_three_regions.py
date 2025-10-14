@@ -465,14 +465,14 @@ def evaluation_between_regions(
         
         target_times = tr_target_hres_data.time
 
-        for i in range(rollouts_num):
+        for r in range(rollouts_num):
             # get target time
             # get only two data for target
             # Lead time target
-            tr_lead_time_target = tr_target_hres_data.sel(time=slice(target_times[i], target_times[i+1]))
+            tr_lead_time_target = tr_target_hres_data.sel(time=slice(target_times[r], target_times[r+1]))
             # Lead time target
-            br_lead_time_target = br_target_hres_data.sel(time=slice(target_times[i], target_times[i+1]))
-            third_lead_time_target = third_target_hres_data.sel(time=slice(target_times[i], target_times[i+1]))
+            br_lead_time_target = br_target_hres_data.sel(time=slice(target_times[r], target_times[r+1]))
+            third_lead_time_target = third_target_hres_data.sel(time=slice(target_times[r], target_times[r+1]))
             
             ## ACC
             target_time = tr_lead_time_target.time.values[0]
@@ -482,7 +482,10 @@ def evaluation_between_regions(
             tr_feature_surface_data, tr_target_surface_data = get_surface_feature_target_data(tr_feature_hres_data, tr_lead_time_target)
             tr_feature_atmos_data, tr_target_atmos_data = get_atmos_feature_target_data(tr_feature_hres_data, tr_lead_time_target)
             tr_feature_static_data, tr_target_static_data = get_static_feature_target_data(tr_feature_era_data, tr_target_era_data)
-
+            
+            
+            #####################"DEBUG"
+ 
             # Extract features and targets for base region
             br_feature_surface_data, br_target_surface_data = get_surface_feature_target_data(br_feature_hres_data, br_lead_time_target)
             br_feature_atmos_data, br_target_atmos_data = get_atmos_feature_target_data(br_feature_hres_data, br_lead_time_target)
@@ -509,14 +512,14 @@ def evaluation_between_regions(
 
             
             # predictions
-            tr_predictions =  predict_fn(model=model, batch=tr_input_batch, rollout_nums=rollouts_num, device=device)
-            br_predictions =  predict_fn(model=model, batch=br_input_batch, rollout_nums=rollouts_num, device=device)
-            third_predictions =  predict_fn(model=model, batch=third_input_batch, rollout_nums=rollouts_num, device=device)
+            tr_predictions =  predict_fn(model=model, batch=tr_input_batch, rollout_nums=r+1, device=device)
+            br_predictions =  predict_fn(model=model, batch=br_input_batch, rollout_nums=r+1, device=device)
+            third_predictions =  predict_fn(model=model, batch=third_input_batch, rollout_nums=r+1, device=device)
             
             # Compuete rmse for all lead times
-            tr_prediction = tr_predictions[i]
-            br_prediction = br_predictions[i]
-            third_prediction = third_predictions[i]
+            tr_prediction = tr_predictions[r]
+            br_prediction = br_predictions[r]
+            third_prediction = third_predictions[r]
             
             for surf_var in SURFACE_VARIABLES:
                 # for target region
@@ -550,7 +553,7 @@ def evaluation_between_regions(
                                         ) 
                 if rmse_tr is not None and not np.isnan(rmse_tr.cpu()):
                     counter_tr+=1
-                    tr_surface_rmses[surf_var][i]+= rmse_tr
+                    tr_surface_rmses[surf_var][r]+= rmse_tr
                     
                 
                 ######### Base region
@@ -564,7 +567,7 @@ def evaluation_between_regions(
                 if rmse_br is not None and not np.isnan(rmse_br.cpu()):
                     counter_br+=1
                 
-                    br_surface_rmses[surf_var][i]+= rmse_br
+                    br_surface_rmses[surf_var][r]+= rmse_br
                 
                 
                 
@@ -579,7 +582,7 @@ def evaluation_between_regions(
                 if rmse_third is not None and not np.isnan(rmse_third.cpu()):
                     counter_third+=1
                 
-                    third_surface_rmses[surf_var][i]+= rmse_third
+                    third_surface_rmses[surf_var][r]+= rmse_third
                
             ## Atmospheric
             atmos_levels_num = tr_atmospheric_rmses["z"].shape[0]
@@ -618,7 +621,7 @@ def evaluation_between_regions(
                                                 torch.tensor(tr_feature_hres_data.longitude.values)    
                                             ) 
                     if rmse_tr is not None and not np.isnan(rmse_tr.cpu()):
-                        tr_atmospheric_rmses[atmos_var][c, i] += rmse_tr
+                        tr_atmospheric_rmses[atmos_var][c, r] += rmse_tr
                     
                  
                     
@@ -631,7 +634,7 @@ def evaluation_between_regions(
                                                 torch.tensor(br_feature_hres_data.longitude.values)    
                                             ) 
                     if rmse_br is not None and not np.isnan(rmse_br.cpu()):
-                        br_atmospheric_rmses[atmos_var][c, i] +=rmse_br
+                        br_atmospheric_rmses[atmos_var][c, r] +=rmse_br
                     
                    
                     
@@ -647,7 +650,7 @@ def evaluation_between_regions(
                         logger.info(f"Na values detected")
                     if rmse_third is not None and not np.isnan(rmse_third.item()):
                     
-                        third_atmospheric_rmses[atmos_var][c, i] += rmse_third
+                        third_atmospheric_rmses[atmos_var][c, r] += rmse_third
                     
                    
                  

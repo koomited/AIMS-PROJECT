@@ -73,7 +73,7 @@ full_era5 = xr.open_zarr(store=store, consolidated=True, chunks=None)
 
 
 
-start_time, end_time = '2022-01-01', '2022-12-31' 
+start_time, end_time = '2022-01-01', '2022-01-31' 
 
   
 sliced_era5 = (
@@ -222,7 +222,7 @@ num_plots_per_rows = 5
 num_rows = 1
 variables = list(target_region_atmos_rmses.keys())
 
-saving_path = "../report/evaluation/rmses_grid/pretrained_small/Africa"
+saving_path = "../report/evaluation/rmses_grid/pretrained_big"
 
 
 # --- Figure and subplots ---

@@ -38,8 +38,16 @@ from matplotlib.ticker import FuncFormatter  # <-- Add this import
 
 import sys
 sys.path.append(os.path.abspath("../src"))
+from utils import get_surface_feature_target_data, get_atmos_feature_target_data
+from utils import get_static_feature_target_data, create_batch, predict_fn, rmse_weights
+from utils import rmse_fn, plot_rmses, create_hrest0_batch
+
+
+# In[78]:
+
 
 from evaluation import evaluation
+from lora import create_custom_model
 
 torch.use_deterministic_algorithms(True)
 
@@ -57,30 +65,19 @@ full_era5 = xr.open_zarr(store=store, consolidated=True, chunks=None)
 
 
 
-start_time, end_time = '2022-01-01', '2022-01-31' 
+start_time, end_time = '2022-01-01', '2022-01-03' 
 
 
 
-lat_max = -22.00 
-lat_min = -37.75  
 
-lon_min = 15.25   
-lon_max = 35.00   
-sliced_era5_SA = (
-    full_era5
-    .sel(
-        time=slice(start_time, end_time),
-        latitude=slice(lat_max, lat_min),
-        longitude=slice(lon_min, lon_max)  
-    )
-)
 
 ################################"" get hres data
 store_hrest0 = fs.get_mapper('gs://weatherbench2/datasets/hres_t0/2016-2022-6h-1440x721.zarr')
 full_hrest0 = xr.open_zarr(store=store_hrest0, consolidated=True, chunks=None)
-sliced_hrest0_sa = full_hrest0.sel(time=slice(start_time, end_time), 
-                                   latitude=slice(lat_min, lat_max), 
-                                   longitude=slice(lon_min, lon_max))
+
+full_hrest0_subset = full_hrest0.isel(latitude=slice(0, 720))
+full_era5_subset = full_era5.isel(latitude=slice(0, 720))
+
 
 
 small_model = AuroraSmall(
@@ -105,7 +102,7 @@ big_model.load_state_dict(torch.load('../model/aurora-0.25-pretrained_big.pth'))
 # In[82]:
 
 
-results = evaluation(small_model, big_model, sliced_era5_SA, sliced_hrest0_sa, device=device)
+results = evaluation(small_model, big_model, full_era5_subset, full_hrest0_subset, device=device)
 
 
 # In[83]:
@@ -127,9 +124,7 @@ relative_surface_rmses = {}
 
 for surf_var, rmses in surface_rmses_small_model.items():
     
-    relative_surface_rmses[surf_var] = (
-        (surface_rmses_small_model[surf_var]-surface_rmses_big_model[surf_var])/surface_rmses_big_model[surf_var]
-        )*100
+    relative_surface_rmses[surf_var] = ((surface_rmses_small_model[surf_var]-surface_rmses_big_model[surf_var])/surface_rmses_big_model[surf_var])*100
     
 
 
@@ -142,9 +137,7 @@ relative_atmospheric_rmses = {}
 
 for atmos_var, rmses in atmospheric_rmses_small_model.items():
     
-    relative_atmospheric_rmses[atmos_var] = (
-        (atmospheric_rmses_small_model[atmos_var]-atmospheric_rmses_big_model[atmos_var])/atmospheric_rmses_big_model[atmos_var]
-        )*100
+    relative_atmospheric_rmses[atmos_var] = ((atmospheric_rmses_small_model[atmos_var]-atmospheric_rmses_big_model[atmos_var])/atmospheric_rmses_big_model[atmos_var])*100
     
 
 
@@ -155,7 +148,7 @@ atmospheric_variables_names = ["Geopotential", "Specific humidity", "Temperature
 # num_surface = len(surface_rmses_fine_tuned)
 n_cols = 5
 
-save_path = "../report/evaluation/big_modelvs_non_finetuned_small/test"
+save_path = "../report/evaluation/big_modelvs_non_finetuned_small"
 
 
 #
@@ -234,7 +227,8 @@ cbar.ax.tick_params(labelsize=tick_fontsize)
 
 # Final layout and saving
 plt.tight_layout(rect=[0, 0, 0.9, 1])
-plt.savefig(f"{save_path}/scorecard_bpt_vsspt.pdf", bbox_inches="tight")
-plt.savefig(f"{save_path}/scorecard_bpt_vsspt.png", bbox_inches="tight")
-plt.savefig(f"{save_path}/scorecard_bpt_vsspt.svg", bbox_inches="tight")
+plt.savefig(f"{save_path}/world_scorecard_bpt_vsspt.pdf", bbox_inches="tight")
+plt.savefig(f"{save_path}/world_scorecard_bpt_vsspt.png", bbox_inches="tight")
+plt.savefig(f"{save_path}/world_scorecard_bpt_vsspt.svg", bbox_inches="tight")
 
+plt.show()
