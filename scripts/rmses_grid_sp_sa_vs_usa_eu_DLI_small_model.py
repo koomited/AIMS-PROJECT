@@ -118,13 +118,19 @@ USA_REGION = (
          299.99  # Eastern boundary (approximate)
 )
 
-AF_REGION =  (
-    -35.99,  # Southern boundary
-     36.0,  # Northern boundary
-      0.0,  # Western boundary
-     51.75, # Eastern boundary (ensures longitude grid divisible by 4)
-)
+# AF_REGION =  (
+#     -35.99,  # Southern boundary
+#      36.0,  # Northern boundary
+#       0.0,  # Western boundary
+#      51.75, # Eastern boundary (ensures longitude grid divisible by 4)
+# )
 
+SA_REGION = (
+      -37.75,  # Southern boundary (approximate)
+         -22.00,  # Northern boundary (approximate)
+         15.25,   # Western boundary (approximate)
+         35.00,  # Eastern boundary (approximate)
+)
 EU_REGION = (
       35.00,  # Southern boundary (approximate)
          69.9,  # Northern boundary (approximate)
@@ -137,7 +143,7 @@ results = evaluation_between_regions(
                         model,
                         era5_data=sliced_era5, 
                         hres_data=sliced_hrest0,
-                        target_region=AF_REGION,
+                        target_region=SA_REGION,
                         base_region= USA_REGION,
                         third_region= EU_REGION,
                )
@@ -234,7 +240,7 @@ handles, labels = None, None
 
 # --- Plot each variable ---
 for i, ax in enumerate(axs[:num_plots]):
-    line1, = ax.plot(lead_time, target_region_atmos_rmses[variables[i]], label="Africa", c="brown")
+    line1, = ax.plot(lead_time, target_region_atmos_rmses[variables[i]], label="South Africa", c="brown")
     line2, = ax.plot(lead_time, base_region_atmos_rmses[variables[i]], label="USA", c="teal")
     line3, = ax.plot(lead_time, eu_region_atmos_rmses[variables[i]], label="Europe", c="navy")
     

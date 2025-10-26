@@ -88,10 +88,13 @@ full_hrest0 = xr.open_zarr(store=store_hrest0, consolidated=True, chunks=None)
 sliced_hrest0 = full_hrest0.sel(time=slice(start_time, end_time))
 #------------------------------1--------------------------------------
 model = AuroraSmall(
-    use_lora=False,  # fine_tuned_Model was not fine-tuned.
+    use_lora=False,  # Model was not fine-tuned.
 )
+model = full_linear_layer_lora(model, lora_r = 16, lora_alpha = 4)
+checkpoint = torch.load('../model/training/hrest0/wampln/checkpoint_epoch_18.pth')
+print("Loading model from checkpoint")
 
-model.load_state_dict(torch.load('../model/aurora-0.25-small-pretrained.pth'))
+model.load_state_dict(checkpoint['model_state_dict'])
 
 # model = Aurora(
 #     use_lora=False,  # fine_tuned_Model was not fine-tuned.
@@ -222,7 +225,7 @@ num_plots_per_rows = 5
 num_rows = 1
 variables = list(target_region_atmos_rmses.keys())
 
-saving_path = "../report/evaluation/rmses_grid/pretrained_small/test"
+saving_path = "../report/evaluation/rmses_grid/fine_tuned_small"
 
 
 # --- Figure and subplots ---
@@ -266,7 +269,7 @@ fig.legend(
 
 # --- Layout and saving ---
 plt.tight_layout(rect=[0, 0.05, 1, 1])  
-plt.savefig(f"{saving_path}/small_sa_vs_usa_vs_eu.pdf", bbox_inches="tight")
-plt.savefig(f"{saving_path}/small_sa_vs_usa_vs_eu.png", bbox_inches="tight")
-plt.savefig(f"{saving_path}/small_sa_vs_usa_vs_eu.svg", bbox_inches="tight")
+plt.savefig(f"{saving_path}/small_ft_sa_vs_usa_vs_eu.pdf", bbox_inches="tight")
+plt.savefig(f"{saving_path}/small_ft_sa_vs_usa_vs_eu.png", bbox_inches="tight")
+plt.savefig(f"{saving_path}/small_ft_sa_vs_usa_vs_eu.svg", bbox_inches="tight")
 plt.close()

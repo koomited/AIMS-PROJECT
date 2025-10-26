@@ -230,11 +230,11 @@ handles, labels = None, None
 
 # --- Plot each variable ---
 for i, ax in enumerate(axs[:num_plots]):
-    ax.plot(lead_time, target_region_atmos_rmses[variables[i]], 
+    ax.plot(lead_time, target_region_atmos_rmses[variables[i]]*100, 
             label="South Africa", c="brown")
-    ax.plot(lead_time, base_region_atmos_rmses[variables[i]], 
+    ax.plot(lead_time, base_region_atmos_rmses[variables[i]]*100, 
             label="USA", c="teal")
-    ax.plot(lead_time, eu_region_atmos_rmses[variables[i]], 
+    ax.plot(lead_time, eu_region_atmos_rmses[variables[i]]*100, 
             label="Europe", c="navy")
     
     # Titles & labels
@@ -266,8 +266,8 @@ fig.legend(
 
 # --- Layout and saving ---
 plt.tight_layout(rect=[0, 0.05, 1, 1])  
-plt.savefig(f"{saving_path}/ft_sa_vs_usa_vs_eu.pdf", bbox_inches="tight")
-plt.savefig(f"{saving_path}/ft_sa_vs_usa_vs_eu.png", bbox_inches="tight")
-plt.savefig(f"{saving_path}/ft_sa_vs_usa_vs_eu.svg", bbox_inches="tight")
+plt.savefig(f"{saving_path}/last_ft_sa_vs_usa_vs_eu.pdf", bbox_inches="tight")
+plt.savefig(f"{saving_path}/last_ft_sa_vs_usa_vs_eu.png", bbox_inches="tight")
+plt.savefig(f"{saving_path}/last_ft_sa_vs_usa_vs_eu.svg", bbox_inches="tight")
 plt.show()
 plt.close()
